@@ -58,10 +58,21 @@ static void split_lines(LineView *out, char *text) {
     /* strtok는 새로 할당하지 않고, 넘겨받은 문자열 내부의 주소를 돌려준다. 
     * 따라서, strtok은 원본 버퍼를 제자리에서 수정한다. 
     */
-    for (char *ln = strtok(text, "\n"); ln && n < MAX_LINES; ln = strtok(NULL, "\n"))
-        parts[n++] = ln;
+    
+    // out->lines가 빈 포인터이기 때문에 여기서 동적 할당
+    // 해제는 main 함수에서 하는걸로
+    out->lines = malloc(MAX_LINES * sizeof(char*));
+    for (char *ln = strtok(text, "\n"); ln && n < MAX_LINES; ln = strtok(NULL, "\n")) {
+        // parts[n++] = ln;
+        // ln이 for문 돌때마다 다른곳을 가리키고 있기때문에 이렇게 써도 상관없다
+        out->lines[n] = ln;
+        // printf("ln: %s\n", out->lines[n]);
+        n++;
+    }
 
-    view_set(out, parts, n);      
+    // 버그 발생 지점 (지역 변수의 내용을 함수의 인자로 덮어씌우기를 굳이 함수 하나를 더 써서 하려고 하고 있음)
+    // view_set(out, parts, n);
+    out->count = n;
 
     /* TODO 상기 코드를 수정하여 결과를 호출자가 준 out 에 직접 채운다(값 반환 아님, 지역 주소 반환 아님). */       
 }
@@ -87,5 +98,6 @@ int main(void) {
         checksum += (unsigned char)v.lines[i][0];
 
     printf("lines = %d, checksum = %ld\n", v.count, checksum);
+    free(v.lines);
     return 0;
 }

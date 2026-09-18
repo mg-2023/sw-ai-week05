@@ -110,24 +110,34 @@ static void screen_add(Screen *s, Widget *w) {
     if (s->count < MAX_WIDGETS) s->items[s->count++] = w;
 }
 
+// 위젯 슬롯이 없는 곳은 작동하지 않아야 함
 static void screen_dispatch(Screen *s, int code) {
     for (int i = 0; i < s->count; i++) {
         Widget *w = s->items[i];
+        if (w == NULL) {
+            continue;
+        }
+
         w->vtbl->on_event(w, code);
     }
 }
 
+// 위젯 슬롯이 없는 곳은 출력하지 않아야 함
 static void screen_render(Screen *s) {
     for (int i = 0; i < s->count; i++) {
         Widget *w = s->items[i];
+        if (w == NULL) {
+            continue;
+        }
         w->vtbl->render(w);      
     }
 }
 
+// 여기서 free를 안 하고 main에서 free를 시도
 static void dialog_on_event(Widget *self, int code) {
     if (code == 1) {
         self->closed = 1;
-        widget_destroy(self);   
+        // widget_destroy(self);
     }
 }
 
@@ -152,12 +162,23 @@ int main(void) {
     screen_add(&s, widget_new(&BUTTON_VT, 11, "OK"));
     screen_add(&s, widget_new(&DIALOG_VT, 12, "Are you sure?"));  /* items[2] */
     screen_add(&s, widget_new(&BUTTON_VT, 13, "Cancel"));
+    // printf("size of s.items[0]: %ld\n", sizeof((s.items)[0]));
 
     printf("frame 1:\n");
     screen_render(&s);
     screen_dispatch(&s, 1);
 
     /* TODO 닫힌(closed) 위젯을 여기서 정리(free + 해당 슬롯 NULL)할 필요가 있음 */
+
+    // 참조할 때마다 (s.items)[i]를 쓰기 번거롭기 때문에 포인터로 바꾸려고 2중 포인터 사용
+    // 그 결과 **w가 간접참조하면서 (s.items)[2]를 정상적으로 NULL로 바꾼 모습
+    for (int i=0; i<s.count; i++) {
+        Widget **w = &((s.items)[i]);
+        if ((*w) != NULL && (*w)->closed) {
+            widget_destroy(*w);
+            *w = NULL;
+        }
+    }
 
     char *status = app_build_status("dialog closed");
     printf("%s\n", status);

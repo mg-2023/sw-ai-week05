@@ -47,7 +47,12 @@ static char *skip_ws(char *s) {
 
 static void parse_headers(char *text, Headers *h) {
     for (char *line = strtok(text, "\n"); line != NULL; line = strtok(NULL, "\n")) {
-        char *colon = strchr(line, ':');   
+        char *colon = strchr(line, ':');
+        // 오류 발생 지점, 헤더 파싱이기 때문에 콜론이 없으면 오류로 처리
+        if (!colon) {
+            fprintf(stderr, "No colon in header\n");
+            exit(1);
+        }
 
         *colon = '\0';                    
         char *key = line;

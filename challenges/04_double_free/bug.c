@@ -100,13 +100,16 @@ static void directory_dump(Directory *d) {
 }
 
 static void directory_free(Directory *d) {
+    // 버그 발생 구간
     for (int i = 0; i < d->count; i++) {
         free(d->by_id[i]->name);
         free(d->by_id[i]);                 
     }
-    for (int i = 0; i < d->count; i++) {
-        free(d->by_name[i]);               
-    }
+
+    // by_name은 관찰용이라 절대 free하면 안되는 구조체
+    // for (int i = 0; i < d->count; i++) {
+    //     free(d->by_name[i]);               
+    // }
     d->count = 0;
 }
 

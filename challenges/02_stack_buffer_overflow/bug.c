@@ -63,7 +63,8 @@ static int tri_index(int i, int j) {
 
 /* 파스칼의 삼각형을 tri[] 에 채운다. */
 static void build_pascal(int *tri, int rows) {
-    for (int i = 0; i <= rows; i++) {
+    // 버그 발생 지점, 등호 하나 빼서 수정
+    for (int i = 0; i < rows; i++) {
         for (int j = 0; j <= i; j++) {
             int idx = tri_index(i, j);
             if (j == 0 || j == i) {
@@ -71,6 +72,8 @@ static void build_pascal(int *tri, int rows) {
             } else {
                 int up_left  = tri_index(i - 1, j - 1);
                 int up_right = tri_index(i - 1, j);
+                // 로그
+                fprintf(stderr, "i: %d, j: %d, idx: %d, SIZE: %d\n", i, j, idx, SIZE);
                 tri[idx] = tri[up_left] + tri[up_right];
             }
         }

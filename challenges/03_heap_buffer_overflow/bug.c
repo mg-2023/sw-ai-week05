@@ -62,10 +62,13 @@ static void list_init(IntList *l) {
 static void list_ensure(IntList *l, size_t need) {
     if (need <= l->cap) return;
 
-    size_t newcap = l->cap ? l->cap * 2 : 8;
+    // 버그 발생 지역
+    size_t newcap = l->cap ? l->cap : 8;
     while (newcap < need) newcap *= 2;
 
-    int *p = realloc(l->data, l->cap * sizeof(int));
+    // newcap을 열심히 구해놓고 현재 크기로 재할당: 잘못됨!
+    // newcap만큼 재할당해야 문제가 해결될 것
+    int *p = realloc(l->data, newcap * sizeof(int));
     if (!p) { perror("realloc"); free(l->data); exit(1); }
 
     l->data = p;

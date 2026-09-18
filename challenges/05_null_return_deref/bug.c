@@ -49,7 +49,9 @@ static void cfg_set(Config *c, const char *k, const char *v) {
 static const char *cfg_get(const Config *c, const char *k) {
     for (int i = 0; i < c->n; i++)
         if (strcmp(c->keys[i], k) == 0) return c->vals[i];
-    return NULL;                       /* 없는 키 → NULL */
+    return "";                       /* 없는 키 → NULL */
+    // 없는 키를 냅다 NULL로 반환해버리니 strlen 함수 호출할 때 오류 발생
+    // 대신 기본값인 빈 문자열을 반환
 }
 
 static void expand(const Config *c, const char *tmpl, char *out, size_t outcap) {
@@ -64,8 +66,13 @@ static void expand(const Config *c, const char *tmpl, char *out, size_t outcap) 
             memcpy(key, p + 2, kl);
             key[kl] = '\0';
 
-            const char *v = cfg_get(c, key);      
-            size_t vl = strlen(v);                 
+            // 로그
+            fprintf(stderr, "before cfg_get: %s\n", key);
+            const char *v = cfg_get(c, key);    
+            fprintf(stderr, "after cfg_get: %s\n", v);  
+
+            // 버그 발생 지점
+            size_t vl = strlen(v);
             if (o + vl < outcap) { memcpy(out + o, v, vl); o += vl; }
             p = end + 1;
         } else {
