@@ -72,12 +72,14 @@ static void dirty_heap(void) {
 }
 
 static int **make_matrix(void) {
-
-    int **rows = malloc(ROWS * sizeof(int *));
+    // 문제 1: malloc 대신 calloc으로 수정
+    int **rows = calloc(ROWS, sizeof(int *));
     if (!rows) { perror("malloc"); exit(1); }
 
-    for (int i = 0; i < ROWS; i += 2) {
-        int *r = malloc(COLS * sizeof(int));
+    // 문제 2: 행만 초기화하고 열까지 초기화하지 않으면
+    //        초기화하지 않은 행에 대한 배열요소의 주소는 "널포인터에서 4를 더하는" 참사가 발생
+    for (int i = 0; i < ROWS; i++) {
+        int *r = calloc(COLS, sizeof(int));
         for (int j = 0; j < COLS; j++) r[j] = i * COLS + j;
         rows[i] = r;
     }
@@ -98,9 +100,15 @@ int main(void) {
     dirty_heap();
 
     int **rows = make_matrix();
+    // 로그: rows의 각 행이 가리키는 주소를 체크
+    for (int i=0; i<ROWS; i++) {
+        for (int j=0; j<COLS; j++) {
+            fprintf(stderr, "&(rows[%d][%d]): %p\n", i, j, &(rows[i][j]));
+        }
+    }
     printf("summing %dx%d matrix...\n", ROWS, COLS);
 
-    long s = row_sum(rows, ROWS);     
+    long s = row_sum(rows, ROWS);
 
     printf("sum = %ld\n", s);
 

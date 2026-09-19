@@ -78,10 +78,14 @@ static void eb_push(EditBuffer *e, int v) {
     e->data[e->len++] = v;
 }
 
+// 여기서 free하다가 문제가 발생
 static void eb_free(EditBuffer *e) {
+    fprintf(stderr, "e->data: %p\n", e->data);
     free(e->data);
+    fprintf(stderr, "e->clipboard: %p\n", e->clipboard);
     free(e->clipboard);
     for (int i = 0; i < e->undo_n; i++) {
+        fprintf(stderr, "e->undo[%d]: %p\n", i, e->undo[i]);
         free(e->undo[i]);           
     }
     e->undo_n = 0;
