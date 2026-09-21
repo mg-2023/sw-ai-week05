@@ -67,6 +67,7 @@ static void parse_row(Row *r, const char *csv) {
 
     for (char *tok = strtok(r->base, ","); tok && r->n < MAX_FIELDS;
          tok = strtok(NULL, ",")) {
+        fprintf(stderr, "tok pos: %p\n", (void*)tok);
         r->fields[r->n++] = tok;  /* fields[0]=base, 나머지는 내부 포인터 */
     }
 }
@@ -78,9 +79,14 @@ static void row_print(const Row *r) {
 }
 
 static void row_free(Row *r) {
-    for (int i = 0; i < r->n; i++) {
-        free(r->fields[i]);       
-    }
+    // 문제: 문자열의 시작을 가리키는 포인터가 이미 반환됐는데, 거기서 오프셋만큼 떨어진 곳을 또 free하려고 함
+    // 해결: base만 깔끔하게 free하면 됨
+
+    // for (int i = 0; i < r->n; i++) {
+    //     fprintf(stderr, "r->fields[%d] pos = %p\n", i, (void*)(r->fields[i]));
+    //     free(r->fields[i]);       
+    // }
+    free(r->base);
     r->n = 0;
 }
 

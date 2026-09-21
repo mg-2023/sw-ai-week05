@@ -78,10 +78,14 @@ static Job *filter_jobs(Job *head, int threshold, Audit *audit) {
     Job *cur = head;
 
     while (cur != NULL) {
+        // 문제: cur을 반환해버린 상태에서 next로 가려고 시도함
+        // 해결: next로 먼저 간 다음 이전 노드를 free해야 함
+        //      or 밑에 선언된 것처럼 nx에 먼저 저장하고 이동한 다음 cur을 반환
         if (cur->priority < threshold) {
+            Job *nx = cur->next;
             audit_add(audit, cur->id);   
             job_release(cur);            
-            cur = cur->next;             
+            cur = nx;             
         } else {
             Job *nx = cur->next;
             cur->next = NULL;

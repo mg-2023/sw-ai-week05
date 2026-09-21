@@ -48,11 +48,22 @@
  *   생각해보기: 여러 번 호출돼도 같은 저장소를 계속 나눠 쓰려면(커서 arena_off 유지)
  *               이 버퍼는 왜 전역(또는 static)이어야 할까? */
 static unsigned char arena[ARENA_SIZE];    /* 전역(.bss) 아레나 */
+
+// 여기의 주소는 (arena+4096)과 같음 (전역 변수를 이어서 선언하면 메모리상에 나란히 배치됨)
 static size_t arena_off = 0;
 
 static void *arena_alloc(size_t n) {
     void *p = &arena[arena_off];
+    fprintf(stderr, "arena_off before: %ld ", arena_off);
+    // 문제: arena에 쓸 곳이 부족한 상태에서도 arena_off를 계속 늘리려고 함
+    // 해결: 오류 처리
+    if (arena_off + n >= ARENA_SIZE) {
+        fprintf(stderr, "Global overflow detected\n");
+        exit(1);
+    }
     arena_off += n;
+    // 로그: 아레나의 현재 부분과 끝 부분을 출력
+    fprintf(stderr, "after: %ld\n", arena_off);
     return p;
 }
 

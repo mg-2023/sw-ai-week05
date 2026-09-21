@@ -45,15 +45,17 @@
 #include <stdlib.h>
 #include <stdint.h> // 수정할 때 SIZE_MAX 로 곱셈 오버플로를 검사하라고 미리 넣어 둔 헤더
 
+// 이 구조체도 size_t로 바꿔줌
 typedef struct {
-    int width;
-    int height;
-    int channels;
-    int nbytes;              
+    size_t width;
+    size_t height;
+    size_t channels;
+    size_t nbytes;              
     unsigned char *px;
 } Image;
 
-static Image *image_new(int width, int height, int channels) {
+// 이 함수의 인자가 size_t가 아니라서 생기는 문제
+static Image *image_new(size_t width, size_t height, size_t channels) {
     Image *img = malloc(sizeof *img);
     if (!img) { perror("malloc"); exit(1); }
     img->width = width;
@@ -70,6 +72,10 @@ static void image_fill(Image *img, unsigned char value) {
 
     size_t total = (size_t)img->width * (size_t)img->height * (size_t)img->channels;
     for (size_t i = 0; i < total; i++) {
+        // 물리적 메모리 주소가 16기가라 넣어둔 탈출 구문
+        if (i >= INT32_MAX) {
+            break;
+        }
         img->px[i] = value;                     
     }
 }
@@ -87,7 +93,9 @@ int main(void) {
      *               일 때가 3(RGB)일 때보다 오버플로가 더 쉽게 터질까?
      *               (해결 힌트: 크기 계산을 size_t 로 승격하고, 곱셈 오버플로를 검사한다) */
     Image *img = image_new(65536, 65536, 4);
-    printf("allocated nbytes(int)=%d for %dx%d x%d\n",
+    // printf("allocated nbytes(int)=%d for %dx%d x%d\n",
+    //        img->nbytes, img->width, img->height, img->channels);
+    printf("allocated nbytes(size_t)=%ld for %ldx%ld x%ld\n",
            img->nbytes, img->width, img->height, img->channels);
 
     image_fill(img, 0xFF);                       
