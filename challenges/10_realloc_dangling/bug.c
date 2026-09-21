@@ -60,17 +60,37 @@ static void eb_init(EditBuffer *e) {
     if (!e->clipboard) { perror("malloc"); exit(1); }
 }
 
+// 코드 작성 시점에서는 원래 e->data가 강제 해제될 줄 모르고 그대로 가리키고 있었음
+// realloc 하면서 e->data가 옮겨지고, 그 후 eb_free 진행 중 대참사
 static void eb_snapshot(EditBuffer *e) {
-    if (e->undo_n < MAX_UNDO) e->undo[e->undo_n++] = e->data;
+    // e->data의 복사본을 어딘가에 새로 할당해서 그 주소를 저장하게 해야 함
+    int *datacopy = malloc((e->cap) * sizeof(int));
+    if (!datacopy) {
+        perror("malloc");
+        free(e->data);
+        exit(1);
+    }
+    // 복사본 배열에 데이터를 복사
+    for (size_t i=0; i<e->cap; i++) {
+        datacopy[i] = e->data[i];
+    }
+
+    // if (e->undo_n < MAX_UNDO) e->undo[e->undo_n++] = e->data;
+    if (e->undo_n < MAX_UNDO) e->undo[e->undo_n++] = datacopy;
+
+    // 복사본을 저장한 위치 확인
+    fprintf(stderr, "snap save=%p\n", (void*)datacopy);
 }
 
 static void eb_grow(EditBuffer *e, size_t need) {
     size_t nc = e->cap;
     while (nc < need) nc *= 2;
+    int *old = e->data;
     int *p = realloc(e->data, nc * sizeof(int));   
     if (!p) { perror("realloc"); free(e->data); exit(1); }
     e->data = p;                                   
     e->cap = nc;
+    fprintf(stderr, "grow old: %p, new: %p\n", (void*)old, (void*)(e->data));
 }
 
 static void eb_push(EditBuffer *e, int v) {
@@ -78,14 +98,11 @@ static void eb_push(EditBuffer *e, int v) {
     e->data[e->len++] = v;
 }
 
-// 여기서 free하다가 문제가 발생
 static void eb_free(EditBuffer *e) {
-    fprintf(stderr, "e->data: %p\n", e->data);
     free(e->data);
-    fprintf(stderr, "e->clipboard: %p\n", e->clipboard);
     free(e->clipboard);
     for (int i = 0; i < e->undo_n; i++) {
-        fprintf(stderr, "e->undo[%d]: %p\n", i, e->undo[i]);
+        fprintf(stderr, "free  undo[%d]=%p\n", i, (void*)e->undo[i]);
         free(e->undo[i]);           
     }
     e->undo_n = 0;
