@@ -87,13 +87,18 @@ static void deliver(Broker *b, Subscriber sub) {
     }
 }
 
+// 문제: 여기서 메시지 처리를 하고 냅다 free해버려서 브로커가 꺼질 때 이상한 주소를 free하게 됨
+// 해결: 브로커는 절대 free하면 안됨
 static void on_message(Msg *m) {
     printf("recv #%d: %s\n", m->id, m->body);
-    msg_free(m);                         
+    fprintf(stderr, "free broker: %p\n", m);
+    // msg_free(m);
 }
 
 static void broker_shutdown(Broker *b) {
     for (int i = 0; i < b->log_n; i++) {
+        // free broker 로그에 적힌 주소와 같으면 문제 발생
+        fprintf(stderr, "shutdown free address: %p\n", b->log[i]);
         msg_free(b->log[i]);             
     }
     b->log_n = 0;

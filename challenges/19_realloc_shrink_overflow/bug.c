@@ -53,11 +53,14 @@ static void signal_init(Signal *s, size_t n) {
     for (size_t i = 0; i < n; i++) s->samples[i] = (double)(i % 7) - 3.0;
 }
 
+// 문제: cap을 갱신해놓고 len을 갱신하지 않음, 그 결과 줄어든 samples를 2000000번 순회, 세그폴트
+// 해결: len까지 갱신해서 signal_energy가 올바르게 종료될 수 있도록 함
 static void signal_trim(Signal *s, size_t keep) {
     if (keep > s->cap) return;
     double *p = realloc(s->samples, keep * sizeof(double));
     if (p) s->samples = p;
-    s->cap = keep;                 
+    s->cap = keep;
+    s->len = keep;      
 }
 
 static double signal_energy(const Signal *s) {

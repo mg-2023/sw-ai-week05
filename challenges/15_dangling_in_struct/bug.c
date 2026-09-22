@@ -65,7 +65,7 @@ static User *login(int uid, const char *name) {
 }
 
 static void logout(Session *s) {
-    free(s->user);         
+    free(s->user);
 }
 
 /* 감사 로그 항목. User 와 같은 크기라 해제된 청크를 재사용하기 쉽다. */
@@ -78,7 +78,7 @@ static char *audit_record(const char *event) {
 }
 
 static int handle_request(Session *s, const char *action) {
-
+    if (!s->user) return 0;
     return s->user->permission(action);    
 }
 
@@ -89,10 +89,16 @@ int main(void) {
 
     printf("first request allowed=%d\n", handle_request(&s, "read"));
 
-    logout(&s);                              
+    fprintf(stderr, "before logout: s.user->permission: %p\n", (void*)s.user->permission);
+    logout(&s);
+    fprintf(stderr, "after logout: s.user->permission: %p\n", (void*)s.user->permission);
+    // 문제: 로그아웃된 사용자 정보를 냅다 free시키고 아무 작업도 하지 않음
+    // 해결: 사용자 정보를 아예 NULL로 만들어버리고 권한 요청시 s->user가 NULL이면 아무 작업도 하지 않음
+    s.user = NULL;
 
     char *rec = audit_record("logout");      
     printf("%s\n", rec);
+    // fprintf(stderr, "after audit: s.user->permission: %p\n", (void*)s.user->permission);
     
     printf("second request allowed=%d\n", handle_request(&s, "write"));
 

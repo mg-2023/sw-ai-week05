@@ -70,10 +70,13 @@ static int conn_open(Conn *c, size_t bufsz) {
     strcpy(c->tx, "tx-ready");
     for (int i = 0; i < 4; i++) c->state[i] = i;
 
+    // 문제: 여기까지 잘 와놓고 라벨을 잘못 지정해서 c->state를 놔두고 c->tx부터 먼저 free해버림
+    // 해결: 아무것도 free하지 말고 fail_state로 점프 (정리 경로 한곳에만 해제 책임을 짐)
     if (!handshake_ok(c)) {
-
-        free(c->tx);              
-        goto fail_tx;             
+        // free(c->tx);
+        // fprintf(stderr, "c->tx: %p\n", c->tx);           
+        // goto fail_tx;
+        goto fail_state;
     }
 
     return 0;                     
@@ -81,6 +84,7 @@ static int conn_open(Conn *c, size_t bufsz) {
 fail_state:
     free(c->state);
 fail_tx:
+    fprintf(stderr, "c->tx: %p\n", c->tx);  
     free(c->tx);                 
 fail_rx:
     free(c->rx);

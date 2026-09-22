@@ -56,8 +56,8 @@ static void *arena_alloc(size_t n) {
     void *p = &arena[arena_off];
     fprintf(stderr, "arena_off before: %ld ", arena_off);
     // 문제: arena에 쓸 곳이 부족한 상태에서도 arena_off를 계속 늘리려고 함
-    // 해결: 오류 처리
-    if (arena_off + n >= ARENA_SIZE) {
+    // 해결: 오류 처리 + 널문자 처리를 위해 조건식에서 1을 더 빼기
+    if (arena_off + n >= ARENA_SIZE-1) {
         fprintf(stderr, "Global overflow detected\n");
         exit(1);
     }

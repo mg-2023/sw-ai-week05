@@ -37,19 +37,27 @@
  *       넘치면 잘라 담거나(truncate) 오류로 처리하세요.
  */
 #include <stdio.h>
+#include <stdlib.h> // exit 함수를 위한 헤더
 #include <string.h>
 
-
+// 문제: cap을 인자로 받아놓고 쓰지를 않음
 static void append_field(char *buf, size_t cap, size_t *len, const char *field, char sep) {
     if (*len > 0) {
         buf[(*len)++] = sep;             
     }
+
     size_t flen = strlen(field);
+    fprintf(stderr, "append: len=%zu cap=%zu + %zu\n", *len, cap, flen);
+    // 해결: len이 cap-1에 도달하면 오류로 처리 (애초에 전문을 확인할거면 버퍼를 크게 잡아야 한다)
     for (size_t i = 0; i < flen; i++) {
+        if ((*len) >= cap) {
+            fprintf(stderr, "char buffer overflow\n");
+            exit(1);
+        }
         buf[(*len)++] = field[i];         
     }
     buf[*len] = '\0';
-    (void)cap;                            
+    // (void)cap;           
 }
 
 static void build_record(char *rec, size_t cap) {
