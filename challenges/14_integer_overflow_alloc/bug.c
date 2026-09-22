@@ -95,7 +95,7 @@ int main(void) {
     Image *img = image_new(65536, 65536, 4);
     // printf("allocated nbytes(int)=%d for %dx%d x%d\n",
     //        img->nbytes, img->width, img->height, img->channels);
-    printf("allocated nbytes(size_t)=%ld for %ldx%ld x%ld\n",
+    printf("allocated nbytes(size_t)=%zu for %zu x %zu x %zu\n",
            img->nbytes, img->width, img->height, img->channels);
 
     image_fill(img, 0xFF);                       

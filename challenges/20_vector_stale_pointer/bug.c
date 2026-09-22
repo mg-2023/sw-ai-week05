@@ -50,7 +50,10 @@ typedef struct {
 
 static void hist_grow(Histogram *h) {
     h->cap = h->cap ? h->cap * 2 : 16;
+    // 로그: p가 realloc 되면서 이동되었는가
+    fprintf(stderr, "before realloc: %p, ", h->data);
     Bucket *p = realloc(h->data, h->cap * sizeof(Bucket));   /* 큰 배열은 이동(mmap 재배치) */
+    fprintf(stderr, "after realloc: %p, h->cap: %zu\n", p, h->cap);
     if (!p) { perror("realloc"); free(h->data); exit(1); }
     h->data = p;
 }
@@ -75,14 +78,26 @@ int main(void) {
 
     for (int k = 0; k < 200000; k++) hist_add(&h, k);
 
-    Bucket *hot = &h.data[100000];
-    hot->count = 1;
+    // 문제: 이 주소가 무효가 될지 모르고 현재 히스토그램의 100000번째 위치를 콕 집어서 포인터 변수에 저장
+    // 해결: 100000번째 위치가 아니라 100000이라는 인덱스를 hot에 저장, 이후 호출할 때 사용
+    // 해결2: 꼭 *hot을 쓰고 싶으면 hist_add 호출시마다 hot을 바꿔줌 (이건 비효율적)
+    size_t hot = 100000;
+    h.data[hot].count = 1;
+    // Bucket *hot = &h.data[100000];
+    // hot->count = 1;
 
-    for (int k = 200000; k < 600000; k++) hist_add(&h, k);
+    for (int k = 200000; k < 600000; k++) {
+        hist_add(&h, k);
+        // hot = &h.data[100000];
+    }
 
-    hot->count += 1000;
+    // 로그: hot의 위치와 h.data[100000]의 위치 (같아야 정상, 다르면 버그)
+    // fprintf(stderr, "hot: %p, &(h.data[100000]): %p\n", hot, &(h.data[100000]));
+    h.data[hot].count += 1000;
+    // hot->count += 1000;
 
-    printf("hot=%ld total=%ld len=%zu\n", hot->count, hist_total(&h), h.len);
+    printf("hot=%ld total=%ld len=%zu\n", h.data[hot].count, hist_total(&h), h.len);
+    // printf("hot=%ld total=%ld len=%zu\n", hot->count, hist_total(&h), h.len);
     free(h.data);
     return 0;
 }
